@@ -23,6 +23,7 @@ func main() {
 	router.HandleFunc("/todo/{id}", todo.UpdateTodo).Methods("PUT")
 	router.HandleFunc("/todo/{id}", todo.DeleteTodo).Methods("DELETE")
 	router.HandleFunc("/todo", todo.AddTodo).Methods("POST")
+	router.HandleFunc("/todo", todo.GetAllTodos).Methods("GET")
 
 	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Dude, it's an API.")

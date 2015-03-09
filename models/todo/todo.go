@@ -9,9 +9,21 @@ import (
 )
 
 type Todo struct {
-	Id        bson.ObjectId `string:"id"`
-	Text      string        `string:"task"`
-	Completed bool          `string:"completed"`
+	Id        bson.ObjectId `json:"id"`
+	Text      string        `json:"text"`
+	Completed bool          `json:"completed"`
+}
+
+func GetAllTodos() (todos []Todo, err error) {
+	sess, err := mgo.DialWithInfo(database.MongoConnectionString())
+	if err != nil {
+		return
+	}
+	defer sess.Close()
+
+	err = sess.DB(database.DATABASE_NAME).C("Todos").Find(bson.M{}).All(&todos)
+
+	return
 }
 
 func (t *Todo) Get() error {
