@@ -1,4 +1,4 @@
-package todo
+package team
 
 import (
 	"encoding/json"
@@ -6,22 +6,22 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mickelsonm/gotodo/models/todo"
+	"github.com/mickelsonm/gotodo/models/team"
 	"gopkg.in/mgo.v2/bson"
 )
 
-func GetAllTodos(rw http.ResponseWriter, req *http.Request) {
-	todos, err := todo.GetAllTodos()
+func GetAllTeams(w http.ResponseWriter, req *http.Request) {
+	teams, err := team.GetAllTeams()
 	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	toJSON(rw, todos)
+	toJSON(w, teams)
 }
 
-func GetTodo(rw http.ResponseWriter, req *http.Request) {
+func GetTeam(rw http.ResponseWriter, req *http.Request) {
 	var err error
-	var t todo.Todo
+	var t team.Team
 
 	if err = getID(rw, req, &t); err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -36,9 +36,9 @@ func GetTodo(rw http.ResponseWriter, req *http.Request) {
 	toJSON(rw, t)
 }
 
-func AddTodo(rw http.ResponseWriter, req *http.Request) {
+func AddTeam(rw http.ResponseWriter, req *http.Request) {
 	var err error
-	var t todo.Todo
+	var t team.Team
 
 	if err = json.NewDecoder(req.Body).Decode(&t); err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -53,9 +53,9 @@ func AddTodo(rw http.ResponseWriter, req *http.Request) {
 	toJSON(rw, t)
 }
 
-func UpdateTodo(w http.ResponseWriter, req *http.Request) {
+func UpdateTeam(w http.ResponseWriter, req *http.Request) {
 	var err error
-	var t todo.Todo
+	var t team.Team
 
 	if err = json.NewDecoder(req.Body).Decode(&t); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -70,9 +70,9 @@ func UpdateTodo(w http.ResponseWriter, req *http.Request) {
 	toJSON(w, t)
 }
 
-func DeleteTodo(w http.ResponseWriter, req *http.Request) {
+func DeleteTeam(w http.ResponseWriter, req *http.Request) {
 	var err error
-	var t todo.Todo
+	var t team.Team
 
 	if err = getID(w, req, &t); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,7 +85,7 @@ func DeleteTodo(w http.ResponseWriter, req *http.Request) {
 	toJSON(w, t)
 }
 
-func getID(rw http.ResponseWriter, req *http.Request, t *todo.Todo) error {
+func getID(rw http.ResponseWriter, req *http.Request, t *team.Team) error {
 	if req != nil && t != nil {
 		idStr := mux.Vars(req)["id"]
 		if bson.IsObjectIdHex(idStr) {
@@ -93,15 +93,15 @@ func getID(rw http.ResponseWriter, req *http.Request, t *todo.Todo) error {
 			return nil
 		}
 	}
-	return errors.New("Error getting todo ID")
+	return errors.New("Error getting team ID")
 }
 
-func toJSON(rw http.ResponseWriter, data interface{}) {
+func toJSON(w http.ResponseWriter, data interface{}) {
 	js, err := json.Marshal(data)
 	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	rw.Header().Set("Content-Type", "application/json")
-	rw.Write(js)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }

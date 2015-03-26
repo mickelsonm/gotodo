@@ -7,10 +7,6 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-const (
-	DATABASE_NAME = "TodosDB"
-)
-
 func MongoConnectionString() *mgo.DialInfo {
 	info := new(mgo.DialInfo)
 	addr := os.Getenv("MONGO_URL")
@@ -25,7 +21,7 @@ func MongoConnectionString() *mgo.DialInfo {
 	info.Timeout = time.Second * 2
 	info.FailFast = true
 	if info.Database == "" {
-		info.Database = DATABASE_NAME
+		info.Database = "TodosDB"
 	}
 	return info
 }

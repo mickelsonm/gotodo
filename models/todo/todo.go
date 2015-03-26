@@ -8,20 +8,26 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const (
+	todosCollectionName = "Todos"
+)
+
+type Todos []Todo
 type Todo struct {
-	Id        bson.ObjectId `json:"id"`
-	Text      string        `json:"text"`
-	Completed bool          `json:"completed"`
+	Id        bson.ObjectId `bson:"_id" json:"id"`
+	Text      string        `bson:"text" json:"text"`
+	Assigned  bool          `bson:"assigned" json:"assigned"`
+	Completed bool          `bson:"completed" json:"completed"`
 }
 
-func GetAllTodos() (todos []Todo, err error) {
+func GetAllTodos() (todos Todos, err error) {
 	sess, err := mgo.DialWithInfo(database.MongoConnectionString())
 	if err != nil {
 		return
 	}
 	defer sess.Close()
 
-	err = sess.DB(database.DATABASE_NAME).C("Todos").Find(bson.M{}).All(&todos)
+	err = sess.DB(database.MongoConnectionString().Database).C(todosCollectionName).Find(bson.M{}).All(&todos)
 
 	return
 }
@@ -37,39 +43,27 @@ func (t *Todo) Get() error {
 	}
 	defer sess.Close()
 
-	err = sess.DB(database.DATABASE_NAME).C("Todos").Find(bson.M{
+	err = sess.DB(database.MongoConnectionString().Database).C(todosCollectionName).Find(bson.M{
 		"_id": t.Id,
 	}).One(&t)
 
 	return err
 }
 
-func (t *Todo) Add() error {
+func (t *Todo) Create() error {
 	if t.Text == "" {
 		return errors.New("Todo must have text!")
 	}
-	t.Id = bson.NewObjectId()
 
-	sess, err := mgo.DialWithInfo(database.MongoConnectionString())
+	session, err := mgo.DialWithInfo(database.MongoConnectionString())
 	if err != nil {
 		return err
 	}
-	defer sess.Close()
+	defer session.Close()
 
-	col := sess.DB(database.DATABASE_NAME).C("Todos")
-
-	if _, err = col.UpsertId(t.Id, t); err != nil {
-		return err
-	}
-
-	idx := mgo.Index{
-		Key:        []string{"text", "completed"},
-		Background: true,
-		Sparse:     false,
-		DropDups:   true,
-	}
-	col.EnsureIndex(idx)
-
+	col := session.DB(database.MongoConnectionString().Database).C(todosCollectionName)
+	t.Id = bson.NewObjectId()
+	err = col.Insert(t)
 	return err
 }
 
@@ -81,26 +75,14 @@ func (t *Todo) Update() error {
 		return errors.New("Todo must have text!")
 	}
 
-	sess, err := mgo.DialWithInfo(database.MongoConnectionString())
+	session, err := mgo.DialWithInfo(database.MongoConnectionString())
 	if err != nil {
 		return err
 	}
-	defer sess.Close()
+	defer session.Close()
 
-	var change = mgo.Change{
-		ReturnNew: true,
-		Update: bson.M{
-			"$set": bson.M{
-				"text":      t.Text,
-				"completed": t.Completed,
-			},
-		},
-	}
-
-	_, err = sess.DB(database.DATABASE_NAME).C("Todos").Find(bson.M{
-		"_id": t.Id,
-	}).Apply(change, t)
-
+	col := session.DB(database.MongoConnectionString().Database).C(todosCollectionName)
+	err = col.UpdateId(t.Id, t)
 	return err
 }
 
@@ -109,15 +91,16 @@ func (t *Todo) Delete() error {
 		return errors.New("Invalid Todo ID")
 	}
 
-	sess, err := mgo.DialWithInfo(database.MongoConnectionString())
+	session, err := mgo.DialWithInfo(database.MongoConnectionString())
 	if err != nil {
 		return err
 	}
-	defer sess.Close()
+	defer session.Close()
 
 	if err = t.Get(); err != nil {
 		return err
 	}
 
-	return sess.DB(database.DATABASE_NAME).C("Todos").RemoveId(t.Id)
+	err = session.DB(database.MongoConnectionString().Database).C(todosCollectionName).RemoveId(t.Id)
+	return err
 }
