@@ -1,0 +1,16 @@
+gotodomongo:
+  container_name: gotodo-mongo
+  image: tutum/mongodb
+  restart: always
+  environment:
+    - AUTH=no
+gotodoapi:
+  container_name: gotodo-api
+  image: gotodo
+  restart: always
+  ports:
+    - "9090:9090"
+  links:
+    - gotodomongo:MONGO
+  environment:
+    - MONGO_URL=MONGO:27017
